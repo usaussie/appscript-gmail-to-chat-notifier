@@ -1,8 +1,8 @@
 const IMG_URL = 'https://logodix.com/logo/3.jpg'; // gmail logo url
-const WEBHOOK_URL = 'https://chat.googleapis.com/v1/spaces/something/messages?key=....';
+const WEBHOOK_URL = 'https://chat.googleapis.com/v1/spaces/AAAAgweDMzo/messages?key=...';
 const CARD_TITLE = 'Gmail Notification';
 const CARD_SUBTITLE = 'Chat notification from gmail appscript';
-const CARD_LINK = 'https://mail.google.com';
+const CARD_LINK = 'https://mail.google.com/mail/u/0/#inbox';
 
 /**
  * array of search queries to loop through.
@@ -11,9 +11,11 @@ const CARD_LINK = 'https://mail.google.com';
 function config_gmail_search_array_() {
 
   // array of arrays, title of search, and then query to perform  
+  var five_mins_ago_timestamp = get_unix_timestamp_last_x_mins(5);
+  
   return [
-    ['New Email from Bob', 'from:bob@bob.com newer_than:1h'],
-    ['Unread From Sally', 'from:sally@sally.org is:unread']
+    ['New email from bob in last 5 mins', 'from:bob@bob.com after:' + five_mins_ago_timestamp],
+    //['Newer than 1 hour', 'newer_than:1h']
   ];
 
 }
@@ -43,6 +45,35 @@ function job_check_gmail() {
       }
 
   }
+
+}
+
+/**
+ * 
+ * returns the unix timestamp for the last X minutes,
+ * which is helpful for the gmail search operators, which can't 
+ * do "newer_than:5min", but can do "after:unixtimestamp"
+ * searches. This helps because then you can trigger this
+ * script every 5 mins, and only look for emails that came in
+ * during the last 5 mins.
+ * 
+ */
+
+
+function get_unix_timestamp_last_x_mins(num_minutes) {
+
+  var current_time = Math.floor(Date.now() / 1000)
+
+  console.log('current time: ' + current_time);
+
+  var offset = num_minutes * 60;
+  console.log('offset: ' + offset);
+  
+  var return_value = current_time - offset;
+
+  console.log('returning: ' + return_value);
+
+  return return_value
 
 }
 
