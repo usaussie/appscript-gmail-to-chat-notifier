@@ -11,7 +11,7 @@ const CARD_LINK = 'https://mail.google.com/mail/u/0/#inbox';
 function config_gmail_search_array_() {
 
   // array of arrays, title of search, and then query to perform  
-  var five_mins_ago_timestamp = get_unix_timestamp_last_x_mins(5);
+  var five_mins_ago_timestamp = get_unix_timestamp_last_x_mins_(5);
   
   return [
     ['New email from bob in last 5 mins', 'from:bob@bob.com after:' + five_mins_ago_timestamp],
@@ -60,7 +60,7 @@ function job_check_gmail() {
  */
 
 
-function get_unix_timestamp_last_x_mins(num_minutes) {
+function get_unix_timestamp_last_x_mins_(num_minutes) {
 
   var current_time = Math.floor(Date.now() / 1000)
 
