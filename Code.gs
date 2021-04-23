@@ -20,6 +20,11 @@ function config_gmail_search_array_() {
 
 }
 
+
+/**
+ * DO NOT CHANGE ANYTHING UNDER THIS
+ */
+
 /**
  * 
  * This is the job you'll create a trigger for, so it runs every 5 mins or whatever.
@@ -64,14 +69,14 @@ function get_unix_timestamp_last_x_mins_(num_minutes) {
 
   var current_time = Math.floor(Date.now() / 1000)
 
-  console.log('current time: ' + current_time);
+  //console.log('current time: ' + current_time);
 
   var offset = num_minutes * 60;
-  console.log('offset: ' + offset);
+  //console.log('offset: ' + offset);
   
   var return_value = current_time - offset;
 
-  console.log('returning: ' + return_value);
+  //console.log('returning: ' + return_value);
 
   return return_value
 
