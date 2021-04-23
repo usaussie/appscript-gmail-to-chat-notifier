@@ -26,6 +26,10 @@ function config_gmail_search_array_() {
  */
 
 /**
+* 
+ * USE THIS OR THE OTHER JOB FUNCTION. DO NOT USE BOTH
+ * 
+ * This function sends a count of the number of emails matched to the chat notification card.
  * 
  * This is the job you'll create a trigger for, so it runs every 5 mins or whatever.
  * Just make sure you search queries are appropriately scoped too.
@@ -33,19 +37,61 @@ function config_gmail_search_array_() {
  * to only check for things in the last 5 mins, or it will match previously notified 
  * items (or include read/unread modifiers)
  */
-function job_check_gmail() {
+function job_check_gmail_count_only() {
 
   var search_query_array = config_gmail_search_array_();
   
   for (var i = 0; i < search_query_array.length; i++) {
 
-      console.log('searching: ' + search_query_array[i][1]);
+      //console.log('searching: ' + search_query_array[i][1]);
       
-      var result = search_gmail_(search_query_array[i][1]);
+      var result = countQuery_(search_query_array[i][1]);
 
       if(result > 0) {
 
         postTopicAsCard_(WEBHOOK_URL, CARD_TITLE, CARD_SUBTITLE, IMG_URL, search_query_array[i][0], result + ' emails found', CARD_LINK);
+
+      }
+
+  }
+
+}
+/**
+ * 
+ * USE THIS OR THE OTHER JOB FUNCTION. DO NOT USE BOTH
+ * 
+ * This function sends a snippet of the matched emails to the chat notification card.
+ * 
+ * This is the job you'll create a trigger for, so it runs every 5 mins or whatever.
+ * Just make sure you search queries are appropriately scoped too.
+ * IE: if you're running this every 5 mins, then make sure your search query specifies 
+ * to only check for things in the last 5 mins, or it will match previously notified 
+ * items (or include read/unread modifiers)
+ */
+function job_check_gmail_thread_snippet() {
+
+  var search_query_array = config_gmail_search_array_();
+    
+  for (var i = 0; i < search_query_array.length; i++) {
+
+      //console.log('searching: ' + search_query_array[i][1]);
+      
+      var result = threadQuery_(search_query_array[i][1]);
+
+      //console.log(result);
+
+      if(result.length > 0) {
+
+        //console.log('result length is longer than 0');
+
+        result.forEach(async function(r) {
+          
+          // console.log('posting card now');
+          // console.log(r);
+
+          postTopicAsCard_(WEBHOOK_URL, CARD_TITLE, CARD_SUBTITLE, IMG_URL, search_query_array[i][0], r, CARD_LINK);
+
+        });
 
       }
 
@@ -82,14 +128,13 @@ function get_unix_timestamp_last_x_mins_(num_minutes) {
 
 }
 
-
-
-function search_gmail_(query_string) {
-  
-  return countQuery_(query_string);
-  
-}
-
+/**
+ * 
+ * Use this to just return a count of the emails matched to each search query.
+ * Alternatively, use the other function (thread_query to show snippets of the email
+ * in the card notification.
+ * 
+ */
 function countQuery_(gmailQuery) {
   var pageToken;
   var return_count = 0;
@@ -100,6 +145,9 @@ function countQuery_(gmailQuery) {
     });
     if (threadList.threads && threadList.threads.length > 0) {
       threadList.threads.forEach(function(thread) {
+        
+        //console.log(thread);
+        
         return_count++;
       });
     }
@@ -107,6 +155,28 @@ function countQuery_(gmailQuery) {
   } while (pageToken);
 
   return return_count;
+}
+
+function threadQuery_(gmailQuery) {
+  var pageToken;
+  
+  var return_thread_array = [];
+  do {
+    var threadList = Gmail.Users.Threads.list('me', {
+      q: gmailQuery,
+      pageToken: pageToken
+    });
+    if (threadList.threads && threadList.threads.length > 0) {
+      threadList.threads.forEach(function(thread) {
+        
+        return_thread_array.push(thread.snippet);
+        
+      });
+    }
+    pageToken = threadList.nextPageToken;
+  } while (pageToken);
+
+  return return_thread_array;
 }
 
 
@@ -123,7 +193,9 @@ function postTopicAsCard_(webhook_url, card_title, card_subtitle, img_url, conte
     'payload' : JSON.stringify(card_json)
   };
   
-  UrlFetchApp.fetch(webhook_url, options);
+  result = UrlFetchApp.fetch(webhook_url, options);
+
+  //console.log(result);
 }
 
 /**
@@ -153,7 +225,7 @@ function createCardJson_(card_title, card_subtitle, img_url, content, bottom_lab
                 "icon": "DESCRIPTION",
                 "button": {
                     "textButton": {
-                        "text": "LINK",
+                        "text": "OPEN GMAIL",
                         "onClick": {
                             "openLink": {
                                 "url": card_link
