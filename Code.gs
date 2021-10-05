@@ -1,8 +1,9 @@
 const IMG_URL = 'https://logodix.com/logo/3.jpg'; // gmail logo url
-const WEBHOOK_URL = 'https://chat.googleapis.com/v1/spaces/AAAAgweDMzo/messages?key=...';
+const WEBHOOK_URL = 'https://chat.googleapis.com/v1/spaces/{something}/messages?key=...';
 const CARD_TITLE = 'Gmail Notification';
 const CARD_SUBTITLE = 'Chat notification from gmail appscript';
 const CARD_LINK = 'https://mail.google.com/mail/u/0/#inbox';
+const SLACK_POST_URL = "https://hooks.slack.com/services/{something}/{else}";
 
 /**
  * array of search queries to loop through.
@@ -51,6 +52,8 @@ function job_check_gmail_count_only() {
 
         postTopicAsCard_(WEBHOOK_URL, CARD_TITLE, CARD_SUBTITLE, IMG_URL, search_query_array[i][0], result + ' emails found', CARD_LINK);
 
+        post_to_slack_(CARD_TITLE, CARD_SUBTITLE, search_query_array[i][0], result + ' emails found', CARD_LINK)
+
       }
 
   }
@@ -87,9 +90,16 @@ function job_check_gmail_thread_snippet() {
         result.forEach(async function(r) {
           
           // console.log('posting card now');
-          // console.log(r);
+          console.log(r);
 
           postTopicAsCard_(WEBHOOK_URL, CARD_TITLE, CARD_SUBTITLE, IMG_URL, search_query_array[i][0], r, CARD_LINK);
+
+          //post_to_slack_(CARD_TITLE, CARD_SUBTITLE, search_query_array[i][0], r, CARD_LINK)
+
+          var slack_payload = format_slack_payload(search_query_array[i][0], CARD_TITLE, r)
+  
+          send_alert_to_slack(slack_payload);
+
 
         });
 
@@ -238,4 +248,86 @@ function createCardJson_(card_title, card_subtitle, img_url, content, bottom_lab
         }]
       }]
     };
+}
+
+/**
+ * 
+ * SLACK PIECES
+ * 
+ */
+
+/**
+ * ABOUT
+ * Google Apps Script to post a message to Slack when someone responds to a Google Form.
+ * 
+ * Uses Slack incoming webhooks - https://api.slack.com/incoming-webhooks
+ * and FormsResponse - https://developers.google.com/apps-script/reference/forms/form-response
+ * 
+ * 
+ * AUTHOR
+ * Akash A <github.com/akash1810>
+ * 
+ * 
+ * USAGE
+ * Free to use.
+ */
+
+
+function test_slack() {
+
+  var payload = format_slack_payload('this is another title', 'this is another subtitle', 'this is anohther content')
+  
+  var result = send_alert_to_slack(payload);
+
+}
+
+function format_slack_payload(card_title, card_subtitle, content) {
+  
+
+  let payload = {
+    "blocks": [
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": ":bell: *" + card_title +"* :bell:"
+        }
+      },
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": content
+        }
+      },
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": card_subtitle
+        }
+      },
+      {
+        "type": "divider"
+      },
+    ]
+  };
+  
+  return payload;
+};
+
+function send_alert_to_slack(payload) {
+  const webhook = SLACK_POST_URL;
+  var options = {
+    "method": "post", 
+    "contentType": "application/json", 
+    "muteHttpExceptions": true, 
+    "payload": JSON.stringify(payload) 
+  };
+  
+  try {
+    UrlFetchApp.fetch(webhook, options);
+  } catch(e) {
+    Logger.log(e);
+  }
 }
